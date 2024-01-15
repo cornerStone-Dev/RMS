@@ -1370,7 +1370,7 @@ consumeAlpha(PengumContext *c, u8 *cursor)/*i;*/
 		callWord(c, (u32)word->value, consume, produce);
 		break;}
 		case WORD_GLOBAL:
-		compilePushVal(c, (s32)&word->value);
+		compilePushVal(c, (s32)word->value);
 		break;
 		case WORD_CONSTANT:
 		compilePushVal(c, (s32)word->value);
@@ -1404,7 +1404,15 @@ createVar(PengumContext *c, u8 *start, u32 length)/*i;*/
 	}
 	Tree *word  = createGlobalWord(c, start, length);
 	word->type  = WORD_GLOBAL;
-	word->value = (void*)c->stackSaveArea[c->stackState-1];
+	// align base with nop
+	c->compileBase = alignTo4Bytes(c->compileBase);
+	// save value
+	*(u32*)c->compileBase = c->stackSaveArea[c->stackState-1];
+	word->value = c->compileBase;
+	// move base
+	c->compileBase += 2;
+	// reset compile cursor
+	c->compileCursor = c->compileBase + 2;
 }
 
 /*e*/static void
