@@ -497,7 +497,7 @@ void picoInit(void)/*p;*/
 	// process fith kernel stuff
 	startSysTimer();
 	pengum_compile(Gkernel);
-	io_printi(asmDiv(120, endSysTimer()));
+	io_printi(asmDiv(132, endSysTimer()));
 	io_printsn(" microseconds to compile/execute the fith kernel.");
 	// changes the mode of putty (not good)
 	//~ io_prints("\x1B[20h");

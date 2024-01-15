@@ -412,7 +412,7 @@ int main(int argc, char **argv)
 	
 	// make new file locations
 	u8 outFileName[256];
-	strcpy(outFileName, "src/");
+	strcpy(outFileName, "../src/");
 	strcat(outFileName, (argv[1]));
 	strcat(outFileName, ".c");
 	// write out results

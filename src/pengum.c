@@ -602,6 +602,14 @@ callWordByAddr(PengumContext *c, u32 consume, u32 produce)/*i;*/
 
 /*e*/
 void
+pengum_memoryLeft(void)/*p;*/
+{
+	io_printi(START_OF_REG_RAM - (u32)c.compileBase);
+	io_printsn(": bytes of memory remaining in program data region.");
+}
+
+/*e*/
+void
 pengum_compile(u8 *string)/*p;*/
 {
 	u8 *cursor = string;

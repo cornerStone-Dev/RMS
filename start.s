@@ -315,8 +315,8 @@ clocksSetup:
 	tst r1, r3
 	beq 1b
 	
-	ldr  r2,=PLL_SYS_BASE ;@ base reg 
-	movs r1, 80
+	ldr  r2,=PLL_SYS_BASE	;@ base reg 
+	movs r1, 66		;@ 12 * 66 = 792mhz
 	str  r1,[r2, #PLL_SYS_FBDIV - PLL_SYS_BASE] ;@ set up multiplier
 	
 	ldr r0,=PLL_SYS_POWER + ATOMIC_CLR ;@ turn on power
@@ -331,15 +331,14 @@ clocksSetup:
 	beq 1b
 	
 	;@~ ldr r1,=(((4<<16)|(1<<12))>>12)
-	movs r1, 0x42
+	movs r1, 0x61		;@ 792 / 6 / 1 = 132MHz
 	lsls r1, 12
 	str r1,[r2, #PLL_SYS_PRIM - PLL_SYS_BASE] ;@ set post dividers
 	
 	;@ turn on post dividers
 	movs r1, 0x08
 	str r1,[r0]
-	;@ PLL_SYS is now at 120 mhz, pico max is 133, this is 90% of that
-	;@ so nice margin of safety
+	;@ PLL_SYS is now at 132 mhz, pico max is 133
 	
 	ldr r2,=CLOCKS_BASE
 	movs r1, 1

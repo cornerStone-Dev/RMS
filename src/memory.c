@@ -423,7 +423,6 @@ void printMemStats(void)/*p;*/
 	io_printsn(": bytes of memory in use.");
 	io_printi(memReady);
 	io_printsn(": bytes of memory remaining.");
-	//~ io_printi(START_OF_REG_RAM - (u32)c.compileBase);
-	//~ io_printsn(": bytes of memory remaining in program data region.");
+	pengum_memoryLeft();
 }
 
