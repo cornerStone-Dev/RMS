@@ -264,6 +264,14 @@ armAdd2(u32 dest, u32 arg1)/*i;*/
 }
 
 /*e*/static u32
+armAdc(u32 dest, u32 arg1)/*i;*/
+{
+	u32 code = 0x4140;
+	code += dest + (arg1 << 3);
+	return code;
+}
+
+/*e*/static u32
 armAddImm(u32 dest, u32 val)/*i;*/
 {
 	u32 code = 0x3000;
@@ -824,35 +832,44 @@ compileBwRightShift(PengumContext *c)/*i;*/
 compileBwNot(PengumContext *c)/*i;*/
 {
 	if (stackEffect(c, 1, 1)) { return; }
-	*c->compileCursor++ = armNot(c->stackState, c->stackState); 
+	*c->compileCursor++ = armNot(c->stackState, c->stackState);
 }
 
 /*e*/static void
 compileNegate(PengumContext *c)/*i;*/
 {
 	if (stackEffect(c, 1, 1)) { return; }
-	*c->compileCursor++ = armNeg(c->stackState, c->stackState); 
+	*c->compileCursor++ = armNeg(c->stackState, c->stackState);
+}
+
+/*e*/static void
+compileLogicalNot(PengumContext *c)/*i;*/
+{
+	if (stackEffect(c, 1, 2)) { return; }
+	c->stackState++;
+	*c->compileCursor++ = armNeg(c->stackState-1, c->stackState);
+	*c->compileCursor++ = armAdc(c->stackState, c->stackState-1);
 }
 
 /*e*/static void
 compileDup(PengumContext *c)/*i;*/
 {
 	if (stackEffect(c, 1, 2)) { return; }
-	*c->compileCursor++ = armMov(c->stackState, c->stackState+1); 
+	*c->compileCursor++ = armMov(c->stackState, c->stackState+1);
 }
 
 /*e*/static void
 compileOver(PengumContext *c)/*i;*/
 {
 	if (stackEffect(c, 2, 3)) { return; }
-	*c->compileCursor++ = armMov(c->stackState, c->stackState+2); 
+	*c->compileCursor++ = armMov(c->stackState, c->stackState+2);
 }
 
 /*e*/static void
 compileNip(PengumContext *c)/*i;*/
 {
 	if (stackEffect(c, 2, 1)) { return; }
-	*c->compileCursor++ = armMov(c->stackState, c->stackState-1); 
+	*c->compileCursor++ = armMov(c->stackState, c->stackState-1);
 }
 
 /*e*/static void
@@ -1685,6 +1702,13 @@ builtInWord3(PengumContext *c, u8 *start)/*i;*/
 	&& (start[2] == 'd') )
 	{
 		callWord(c, (u32)pengumMod, 2, 1);
+		return start + 3;
+	}
+	if((start[0] == 'n')
+	&& (start[1] == 'o')
+	&& (start[2] == 't') )
+	{
+		compileLogicalNot(c);
 		return start + 3;
 	}
 	return 0;
