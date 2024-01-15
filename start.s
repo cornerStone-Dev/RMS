@@ -746,7 +746,7 @@ TIMER_BASE 		= 0x40054000
 TIMER_LOW_RAW 		= 0x28
 TIMER_ALARM0 		= 0x10
 TIMER_INTR	 	= 0x34
-TIMER_1_INCREMENT 	= 500
+TIMER_1_INCREMENT 	= 250
 
 .thumb_func
 .global alarm1ISRx
@@ -771,43 +771,43 @@ alarm1ISRx: ;@ interrupt routine. r0-r3,r12 are already preserved
 	;@	store ISR wrap into return location
 	adr		r0, alarm1ISRx_wrap
 	str		r0, [sp, #0x18]
-	bx		lr
+	bx		lr	;@ 19 cycles + 30 interrupt cycles
 
 .balign 4
 .thumb_func
 .global alarm1ISRx_wrap
 alarm1ISRx_wrap:
-	push		{r0,r1,r2,r3,r4,r5} ;@ capture r0-r4, pc
+	push		{r0,r1,r2,r3,r4,r5,r6,r7,lr} ;@ capture r0-r7, pc 
 	mov		r0, r10 // r10 is used to store return address
 	mrs		r1, APSR	;@ save off flags
 	adds		r0, 1		;@ put thumb bit on return addr
-	str		r0, [sp, #20]	;@ overwrite r5 with return address
+	str		r0, [sp, #32]	;@ overwrite lr with return address
 	mov		r0, r12		
-	push		{r0,r1,lr}	;@ capture r12, flags, lr
+	push		{r0,r1,lr}	;@ capture r12, flags, lr; 22 cycles
 .thumb_func
 .global RMS_task0_wrap
 RMS_task0_wrap:
-	ldr		r4, periodCount
 	ldr		r0, RMS_pengum_function_00
 	blx		r0
 	ldr		r4, periodCount
-1:	lsls		r0, r4, 32 - 1
-	beq		RMS_task1_wrap
-alarm1ISRx_wrap_end:
+	push		{r4}	;@ capture period count on stack
 	adr		r1, periodCount
 	adds		r0, r4, 1
 	str		r0, [r1]
-	pop		{r0,r1,r2}
-	mov		lr, r2
-	msr		APSR, r1
-	mov		r12, r0
-	pop		{r0,r1,r2,r3,r4,pc}
+1:	lsls		r0, r4, 32 - 1
+	beq		RMS_task1_wrap
+alarm1ISRx_wrap_end:
+	pop		{r0,r1,r2,r3}
+	mov		lr, r3
+	msr		APSR, r2
+	mov		r12, r1
+	pop		{r0,r1,r2,r3,r4,r5,r6,r7,pc} ;@ 38 cycles
 
 RMS_task1_wrap:
 	ldr		r0, RMS_pengum_function_01
 	blx		r0
-	ldr		r4, periodCount
-2:	lsls	r0, r4, 32 - 2
+	ldr		r4, [sp, #0]
+2:	lsls		r0, r4, 32 - 2
 	bne		alarm1ISRx_wrap_end
 
 RMS_task2_wrap:
@@ -815,77 +815,81 @@ RMS_task2_wrap:
 	bl		uart0processInputs
 	ldr		r0, RMS_pengum_function_02
 	blx		r0
-	ldr		r4, periodCount
-3:	lsls	r0, r4, 32 - 3
+	ldr		r4, [sp, #0]
+3:	lsls		r0, r4, 32 - 3
 	bne		alarm1ISRx_wrap_end
 
 RMS_task3_wrap:
 	ldr		r0, RMS_pengum_function_03
 	blx		r0
-	ldr		r4, periodCount
-4:	lsls	r0, r4, 32 - 4
+	ldr		r4, [sp, #0]
+4:	lsls		r0, r4, 32 - 4
 	bne		alarm1ISRx_wrap_end
 
 RMS_task4_wrap:
 	ldr		r0, RMS_pengum_function_04
 	blx		r0
-	ldr		r4, periodCount
-5:	lsls	r0, r4, 32 - 5
+	ldr		r4, [sp, #0]
+5:	lsls		r0, r4, 32 - 5
 	bne		alarm1ISRx_wrap_end
 
 RMS_task5_wrap:
 	ldr		r0, RMS_pengum_function_05
 	blx		r0
-	ldr		r4, periodCount
-6:	lsls	r0, r4, 32 - 6
+	ldr		r4, [sp, #0]
+6:	lsls		r0, r4, 32 - 6
 	bne		alarm1ISRx_wrap_end
 
 RMS_task6_wrap:
 	ldr		r0, RMS_pengum_function_06
 	blx		r0
-	ldr		r4, periodCount
-7:	lsls	r0, r4, 32 - 7
+	ldr		r4, [sp, #0]
+7:	lsls		r0, r4, 32 - 7
 	bne		alarm1ISRx_wrap_end
 
 RMS_task7_wrap:
 	ldr		r0, RMS_pengum_function_07
 	blx		r0
-	ldr		r4, periodCount
-8:	lsls	r0, r4, 32 - 8
+	ldr		r4, [sp, #0]
+8:	lsls		r0, r4, 32 - 8
 	bne		alarm1ISRx_wrap_end
 
 RMS_task8_wrap:
 	ldr		r0, RMS_pengum_function_08
 	blx		r0
-	ldr		r4, periodCount
-9:	lsls	r0, r4, 32 - 9
+	ldr		r4, [sp, #0]
+9:	lsls		r0, r4, 32 - 9
 	bne		alarm1ISRx_wrap_end
 
 RMS_task9_wrap:
 	ldr		r0, RMS_pengum_function_09
 	blx		r0
-	ldr		r4, periodCount
-10:	lsls	r0, r4, 32 - 10
+	ldr		r4, [sp, #0]
+10:	lsls		r0, r4, 32 - 10
 	bne		alarm1ISRx_wrap_end
 
 RMS_task10_wrap:
 	ldr		r0, RMS_pengum_function_10
 	blx		r0
-	ldr		r4, periodCount
-11:	lsls	r0, r4, 32 - 11
+	ldr		r4, [sp, #0]
+11:	lsls		r0, r4, 32 - 11
 	bne		alarm1ISRx_wrap_end
 
 RMS_task11_wrap:
-	;@~ bl		io_ledToggle
 	ldr		r0, RMS_pengum_function_11
 	blx		r0
-	ldr		r4, periodCount
-	b		alarm1ISRx_wrap_end
+	ldr		r4, [sp, #0]
+11:	lsls		r0, r4, 32 - 12
+	bne		alarm1ISRx_wrap_end
 
-.thumb_func
-.global RMS_default
-RMS_default:
-	bx		lr
+RMS_task12_wrap:
+	;@~ bl		io_ledToggle
+	;@~ movs		r0, 'A'
+	;@~ bl		uart0_outByte
+	ldr		r0, RMS_pengum_function_12
+	blx		r0
+	;@~ ldr		r4, periodCount
+	b		alarm1ISRx_wrap_end
 
 .thumb_func
 .global RMS_set_function
@@ -903,6 +907,7 @@ RMS_get_function: ;@ r0 = index
 	ldr		r0, [r1, r0]
 	bx		lr
 
+.balign 4
 .global RMS_pengum_functions
 RMS_pengum_functions:
 RMS_pengum_function_00: .word RMS_default
@@ -917,8 +922,9 @@ RMS_pengum_function_08: .word RMS_default
 RMS_pengum_function_09: .word RMS_default
 RMS_pengum_function_10: .word RMS_default
 RMS_pengum_function_11: .word RMS_default
+RMS_pengum_function_12: .word RMS_default
 
-.balign 4
+
 periodCount:
 .word	0
 
@@ -928,6 +934,11 @@ periodCount:
 ;@
 ;@ DOES NOT LOAD FROM THE PC RELATIVE AREA
 ;@
+
+.thumb_func
+.global RMS_default
+RMS_default:
+	bx		lr
 
 .thumb_func
 .global pengumDiv

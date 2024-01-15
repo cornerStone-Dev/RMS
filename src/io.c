@@ -490,8 +490,8 @@ void picoInit(void)/*p;*/
 	// set timer 0 to kick off RMS
 	timer_set(0, 10);
 	io_StreamInit();
-	prevFunction = RMS_get_function(11);
-	RMS_set_function(11, registerForLED);
+	prevFunction = RMS_get_function(12);
+	RMS_set_function(12, registerForLED);
 	io_printhn((u32)prevFunction);
 	//~ treeTest();
 	// process fith kernel stuff
