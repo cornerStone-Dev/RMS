@@ -195,6 +195,14 @@ armPop(u32 regBits)/*i;*/
 }
 
 static u32
+armBlx(u32 src)
+{
+	u32 code = 0x4780;
+	code += (src<<3);
+	return code;
+}
+
+static u32
 armLdrLit(u32 dest, u32 imm)
 {
 	u32 code = 0x4800;
@@ -526,7 +534,7 @@ callWord(PengumContext *c, u32 target, u32 consume, u32 produce)/*i;*/
 	u32 afterCallStackState   = 8 - produce;
 	u32 fixUpNeeded = 0;
 	if (currentStackState != desiredCallStackState) { fixUpNeeded = 1; }
-	
+
 	if (fixUpNeeded)
 	{
 		//~ io_printsn("Fix Up Needed!");
@@ -541,6 +549,45 @@ callWord(PengumContext *c, u32 target, u32 consume, u32 produce)/*i;*/
 	u32 currentAddr = (u32)c->compileCursor;
 	c->compileCursor += 2;
 	mc_callRelative(target, currentAddr);
+	if (fixUpNeeded)
+	{
+		// push everything returned on stack, if any
+		if (afterCallStackState != STATE_STACK_EMPTY) {
+		*c->compileCursor++ =
+		armPush(0xFF>>afterCallStackState<<afterCallStackState);}
+		// pop return values AND previous values
+		*c->compileCursor++ =
+		armPop(0xFF>>stackStateAfterCall<<stackStateAfterCall);
+	}
+}
+
+/*e*/void
+callWordByAddr(PengumContext *c, u32 consume, u32 produce)/*i;*/
+{
+	u32 currentStackState = c->stackState + 1;
+	if (stackEffect(c, consume+1, produce)) { return; }
+	// if the current stack state does not match the consume we must fix it
+	// push current stack state
+	//~ io_printin(consume);
+	//~ io_printin(produce);
+	u32 stackStateAfterCall = c->stackState;
+	u32 desiredCallStackState = 8 - consume;
+	u32 afterCallStackState   = 8 - produce;
+	u32 fixUpNeeded = 0;
+	if (currentStackState != desiredCallStackState) { fixUpNeeded = 1; }
+
+	if (fixUpNeeded)
+	{
+		//~ io_printsn("Fix Up Needed!");
+		// push everything on stack
+		*c->compileCursor++ =
+			armPush(0xFF>>currentStackState<<currentStackState);
+		// if function takes arguments, pop them
+		if (desiredCallStackState != STATE_STACK_EMPTY) {
+		*c->compileCursor++ =
+		armPop(0xFF>>desiredCallStackState<<desiredCallStackState); }
+	}
+	*c->compileCursor++ = armBlx(currentStackState-1);
 	if (fixUpNeeded)
 	{
 		// push everything returned on stack, if any
@@ -1361,7 +1408,7 @@ consumeAlpha(PengumContext *c, u8 *cursor)/*i;*/
 {
 	case SCO>>2: { cursor++; createVar(c, start, wordLength); goto done; }
 	case COL>>2: { cursor++; createConstant(c, start, wordLength); goto done; }
-	//~ case ATS>>2: { cursor++; pushAddressOf(start, wordLength); goto done; }
+	case ATS>>2: { cursor++; pushAddressOf(c,start, wordLength); goto done; }
 	case LPA>>2: { cursor++; createWordFunction(c, start, wordLength); SET_FLAG(fInParams); goto done; }
 	//~ case EQU>>2: { cursor++; assignVar(start, wordLength);goto done; }
 	default : break;
@@ -1442,6 +1489,17 @@ createConstant(PengumContext *c, u8 *start, u32 length)/*i;*/
 	Tree *word  = createGlobalWord(c, start, length);
 	word->type  = WORD_CONSTANT;
 	word->value = (void*)c->stackSaveArea[c->stackState-1];
+}
+
+/*e*/static void
+pushAddressOf(PengumContext *c, u8 *start, u32 length)/*i;*/
+{
+	Tree *word = resolveWord(c, start, length);
+	if (word == 0) { return; }
+	if (word->type != WORD_FUNCTION) {
+		printError(c, "You may only take the address of a function");
+		return; }
+	compilePushVal(c, (s32)word->value);
 }
 
 /*e*/static Block *
@@ -1839,6 +1897,16 @@ builtInWord6(PengumContext *c, u8 *start)/*i;*/
 		compileBwNot(c);
 		return start + 6;
 	}
+	if((start[0] == 'c')
+	&& (start[1] == 'a')
+	&& (start[2] == 'l')
+	&& (start[3] == 'l')
+	&& (start[4] >= '0') && (start[4] <= '9')
+	&& (start[5] >= '0') && (start[5] <= '9') )
+	{
+		callWordByAddr(c, start[4] - '0', start[5] - '0');
+		return start + 6;
+	}
 	return 0;
 }
 
@@ -1854,6 +1922,28 @@ builtInWord7(PengumContext *c, u8 *start)/*i;*/
 	&& (start[6] == 'c') )
 	{
 		callWord(c, (u32)pengumRealloc, 2, 1);
+		return start + 7;
+	}
+	if((start[0] == 'r')
+	&& (start[1] == 'm')
+	&& (start[2] == 's')
+	&& (start[3] == '-')
+	&& (start[4] == 'g')
+	&& (start[5] == 'e')
+	&& (start[6] == 't') )
+	{
+		callWord(c, (u32)pengumRmsGet, 1, 1);
+		return start + 7;
+	}
+	if((start[0] == 'r')
+	&& (start[1] == 'm')
+	&& (start[2] == 's')
+	&& (start[3] == '-')
+	&& (start[4] == 's')
+	&& (start[5] == 'e')
+	&& (start[6] == 't') )
+	{
+		callWord(c, (u32)pengumRmsSet, 2, 0);
 		return start + 7;
 	}
 	return 0;

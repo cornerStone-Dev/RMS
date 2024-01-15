@@ -1081,6 +1081,24 @@ pengumRealloc:
 	pop	{pc}
 
 .thumb_func
+.global pengumRmsGet
+pengumRmsGet:
+	push	{lr}
+	movs	r0, r7
+	bl	RMS_get_function
+	movs	r7, r0
+	pop	{pc}
+
+.thumb_func
+.global pengumRmsSet
+pengumRmsSet:
+	push	{lr}
+	movs	r1, r7
+	movs	r0, r6
+	bl	RMS_set_function
+	pop	{pc}
+
+.thumb_func
 .global pengumMachineEnter
 pengumMachineEnter:
 	push	{r4,r5,r6,r7,lr} 	;@ save all c registers
