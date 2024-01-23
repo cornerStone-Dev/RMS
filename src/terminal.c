@@ -124,7 +124,7 @@ void term_processCharacter(u32 input)/*p;*/
 			//~ os_createProcess(io_prints, "\n>", 0);
 			return;
 		}
-		if (input == 0x7F) // backspace input
+		if (input == 0x7F || input == 0x08) // backspace input
 		{
 			deleteCharacter();
 			printTerminalLine();

@@ -659,7 +659,7 @@ case RPA>>2: { if (*cursor == '{') { closeUpParams(c);cursor++;
 	case BSL>>2: { comment: while(*cursor!='\n'&&*cursor!=0){cursor++;} goto loop; }
 	case WSP>>2: { goto loop; }
 	case NUL>>2: { return; }
-	case BAD>>2: { printError(c, "Bad input byte detected"); goto loop; }
+	case BAD>>2: { io_printch(*(cursor-1)); printError(c, " Bad input byte detected");  goto loop; }
 }
 	executeOrContinue:
 	if (c->blocks != 0) { goto loop; }
